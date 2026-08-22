@@ -17,12 +17,20 @@ def get_prime_parts_list():
     try:
         response = requests.get(endpoint, headers=HEADERS, timeout=15)
         response.raise_for_status()
-        full_items_list = response.json()
+        json_response = response.json()
+        full_items_list = json_response.get('data', [])
 
         prime_parts = []
         for item in full_items_list:
             item_name = item.get('i18n', {}).get('en', {}).get('name', '')
-            if 'Prime' in item_name:
+            ducat_value = item.get('ducats')
+            is_prime_part = (
+                'Prime' in item_name
+                and 'Primed' not in item_name
+                and 'Set' not in item_name
+                and ducat_value is not None
+            )
+            if is_prime_part:
                 prime_parts.append(item)
         return prime_parts
 
@@ -32,26 +40,53 @@ def get_prime_parts_list():
     except json.JSONDecodeError:
         return None
 
-def get_price(slug: str):
-    """Calculate the average price of slug's top 5 online cheapest sell orders."""
-    endpoint = f"{API_BASE_URL}/item/{slug}/orders"
+
+def get_lowest_price(slug: str):
+    """Return the lowest current in-game sell price for an item."""
+    endpoint = f"{API_BASE_URL}/orders/item/{slug}/top"
 
     try:
         response = requests.get(endpoint, headers=HEADERS, timeout=10)
         response.raise_for_status()
-        all_orders = response.json().get('data', {}).get('orders', [])
 
-        online_sell_orders = [
-            order for order in all_orders
-            if order.get('order_type') == 'sell' and order.get('user', {}).get('status') == 'ingame' and order.get('visible', False)
+        json_response = response.json()
+        sell_orders = json_response.get('data', {}).get('sell', [])
+        ingame_orders = [
+            order for order in sell_orders
+            if order.get('user', {}).get('status') == 'ingame'
         ]
-        if not online_sell_orders:
-            return None
+
+        prices = [
+            order['platinum']
+            for order in ingame_orders
+            if 'platinum' in order
+        ]
+        return min(prices) if prices else None
+
+    except requests.exceptions.RequestException:
+        return None
+
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None
+
+def get_price(slug: str):
+    """Calculate the average price of slug's top 5 ingame cheapest sell orders."""
+    endpoint = f"{API_BASE_URL}/orders/item/{slug}/top"
+
+    try:
+        response = requests.get(endpoint, headers=HEADERS, timeout=10)
+        response.raise_for_status()
+
+        json_response = response.json()
+        top_sell_orders = json_response.get('data', {}).get('sell', [])
         
-        sorted_orders = sorted(online_sell_orders, key=lambda x: x.get('platinum', float('inf')))
-        top_5_orders = sorted_orders[:5]
+        # Filter for only ingame users
+        ingame_orders = [order for order in top_sell_orders if order.get('user', {}).get('status') == 'ingame']
+
+        if not ingame_orders:
+            return 0
         
-        average_price = sum([order['platinum'] for order in top_5_orders]) / len(top_5_orders)
+        average_price = sum([order['platinum'] for order in ingame_orders]) / len(ingame_orders)
         return int(average_price)
     
     except requests.exceptions.RequestException as e:
