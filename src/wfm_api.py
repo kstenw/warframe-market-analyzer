@@ -41,8 +41,8 @@ def get_prime_parts_list():
         return None
 
 
-def get_lowest_price(slug: str):
-    """Return the lowest current in-game sell price for an item."""
+def get_average_price_top_4(slug: str):
+    """Return the average platinum price of the four cheapest in-game orders."""
     endpoint = f"{API_BASE_URL}/orders/item/{slug}/top"
 
     try:
@@ -56,12 +56,17 @@ def get_lowest_price(slug: str):
             if order.get('user', {}).get('status') == 'ingame'
         ]
 
-        prices = [
+        prices = sorted(
             order['platinum']
             for order in ingame_orders
             if 'platinum' in order
-        ]
-        return min(prices) if prices else None
+        )
+
+        if not prices:
+            return None
+
+        cheapest_four = prices[:4]
+        return round(sum(cheapest_four) / len(cheapest_four), 2)
 
     except requests.exceptions.RequestException:
         return None
@@ -70,27 +75,5 @@ def get_lowest_price(slug: str):
         return None
 
 def get_price(slug: str):
-    """Calculate the average price of slug's top 5 ingame cheapest sell orders."""
-    endpoint = f"{API_BASE_URL}/orders/item/{slug}/top"
-
-    try:
-        response = requests.get(endpoint, headers=HEADERS, timeout=10)
-        response.raise_for_status()
-
-        json_response = response.json()
-        top_sell_orders = json_response.get('data', {}).get('sell', [])
-        
-        # Filter for only ingame users
-        ingame_orders = [order for order in top_sell_orders if order.get('user', {}).get('status') == 'ingame']
-
-        if not ingame_orders:
-            return 0
-        
-        average_price = sum([order['platinum'] for order in ingame_orders]) / len(ingame_orders)
-        return int(average_price)
-    
-    except requests.exceptions.RequestException as e:
-        return None
-    
-    except json.JSONDecodeError:
-        return None
+    """Return the average platinum price of the four cheapest in-game orders."""
+    return get_average_price_top_4(slug)

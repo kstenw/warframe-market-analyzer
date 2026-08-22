@@ -26,9 +26,14 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS price_snapshots (
                 id BIGSERIAL PRIMARY KEY,
                 slug TEXT NOT NULL REFERENCES prime_parts(slug),
-                lowest_price INTEGER,
+                    average_price NUMERIC(10, 2),
                 fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        """))
+
+        connection.execute(text("""
+            ALTER TABLE price_snapshots
+            ADD COLUMN IF NOT EXISTS average_price NUMERIC(10, 2)
         """))
 
 
@@ -81,13 +86,13 @@ def get_top_ducat_parts(limit: int = 10):
         return result.mappings().all()
 
 
-def save_price_snapshot(slug: str, lowest_price) -> None:
-    """Save one lowest-price observation for an item."""
+def save_price_snapshot(slug: str, average_price) -> None:
+    """Save one average-of-three-cheapest-price observation for an item."""
     with engine.begin() as connection:
         connection.execute(text("""
-            INSERT INTO price_snapshots (slug, lowest_price)
-            VALUES (:slug, :lowest_price)
-        """), {"slug": slug, "lowest_price": lowest_price})
+            INSERT INTO price_snapshots (slug, average_price)
+            VALUES (:slug, :average_price)
+        """), {"slug": slug, "average_price": average_price})
 
 
 def delete_old_snapshots(days: int = 90) -> None:
@@ -100,18 +105,18 @@ def delete_old_snapshots(days: int = 90) -> None:
 
 
 def get_lowest_prices():
-    """Return the lowest recorded price for each prime part."""
+    """Return the lowest recorded three-order average for each prime part."""
     with engine.connect() as connection:
         result = connection.execute(text("""
             SELECT
                 prime_parts.name,
                 prime_parts.slug,
-                MIN(price_snapshots.lowest_price) AS lowest_price
+                MIN(price_snapshots.average_price) AS average_price
             FROM price_snapshots
             JOIN prime_parts ON prime_parts.slug = price_snapshots.slug
-            WHERE price_snapshots.lowest_price IS NOT NULL
+            WHERE price_snapshots.average_price IS NOT NULL
             GROUP BY prime_parts.name, prime_parts.slug
-            ORDER BY lowest_price ASC
+            ORDER BY average_price ASC
         """))
         return result.mappings().all()
 

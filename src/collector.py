@@ -29,10 +29,10 @@ def collect_prices():
         if not slug:
             continue
 
-        lowest_price = wfm_api.get_lowest_price(slug)
-        db.save_price_snapshot(slug, lowest_price)
+        average_price = wfm_api.get_average_price_top_4(slug)
+        db.save_price_snapshot(slug, average_price)
 
-        print(f"{number}/{len(prime_parts)}: {name} = {lowest_price} platinum")
+        print(f"{number}/{len(prime_parts)}: {name} = {average_price} platinum")
         time.sleep(REQUEST_DELAY)
 
     db.delete_old_snapshots(SNAPSHOT_RETENTION_DAYS)
