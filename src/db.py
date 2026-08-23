@@ -127,3 +127,83 @@ def get_ducat_stats():
             FROM prime_parts
         """))
         return result.mappings().one()
+
+
+def get_hourly_price_trend(slug: str, days: int = 30):
+    """Return hourly average price trend for one item."""
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT
+                DATE_TRUNC('hour', fetched_at) AS hour_bucket,
+                AVG(average_price) AS avg_price,
+                MIN(average_price) AS min_price,
+                MAX(average_price) AS max_price
+            FROM price_snapshots
+            WHERE slug = :slug
+              AND fetched_at >= CURRENT_TIMESTAMP - (:days * INTERVAL '1 day') AND average_price IS NOT NULL
+            GROUP BY DATE_TRUNC('hour', fetched_at)
+            ORDER BY hour_bucket
+        """), {"slug": slug, "days": days})
+        return result.mappings().all()
+
+
+def get_best_items_to_buy(days: int = 30, limit: int = 20):
+    """Rank items by their recent average platinum cost per ducat."""
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT
+                prime_parts.name,
+                prime_parts.slug,
+                prime_parts.ducats,
+                AVG(price_snapshots.average_price) AS average_price,
+                AVG(price_snapshots.average_price) / prime_parts.ducats AS platinum_per_ducat,
+                COUNT(price_snapshots.id) AS snapshot_count,
+                MAX(price_snapshots.fetched_at) AS last_snapshot
+            FROM price_snapshots
+            JOIN prime_parts ON prime_parts.slug = price_snapshots.slug
+            WHERE price_snapshots.fetched_at >= CURRENT_TIMESTAMP - (:days * INTERVAL '1 day')
+              AND price_snapshots.average_price IS NOT NULL
+              AND prime_parts.ducats > 0
+            GROUP BY prime_parts.name, prime_parts.slug, prime_parts.ducats
+            ORDER BY platinum_per_ducat ASC, average_price ASC
+            LIMIT :limit
+        """), {"days": days, "limit": limit})
+        return result.mappings().all()
+
+
+def get_best_market_hours(days: int = 30, min_items: int = 10):
+    """Find recurring hours when the flat average platinum price is lowest."""
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            WITH recent_prices AS (
+                SELECT
+                    slug,
+                    EXTRACT(HOUR FROM fetched_at)::INTEGER AS hour_of_day,
+                    average_price
+                FROM price_snapshots
+                WHERE fetched_at >= CURRENT_TIMESTAMP - (:days * INTERVAL '1 day')
+                  AND average_price IS NOT NULL
+            ),
+            item_baselines AS (
+                SELECT slug, AVG(average_price) AS baseline_price
+                FROM recent_prices
+                GROUP BY slug
+            ),
+            hourly_item_prices AS (
+                SELECT
+                    slug,
+                    hour_of_day,
+                    AVG(average_price) AS hourly_price
+                FROM recent_prices
+                GROUP BY slug, hour_of_day
+            )
+            SELECT
+                hourly_item_prices.hour_of_day,
+                AVG(hourly_item_prices.hourly_price) AS average_price
+            FROM hourly_item_prices
+            JOIN item_baselines ON item_baselines.slug = hourly_item_prices.slug
+            GROUP BY hourly_item_prices.hour_of_day
+            HAVING COUNT(*) >= :min_items
+            ORDER BY average_price ASC
+        """), {"days": days, "min_items": min_items})
+        return result.mappings().all()

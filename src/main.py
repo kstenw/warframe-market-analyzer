@@ -11,14 +11,27 @@ def run_duckums():
     # Initialize the database and save the prime parts
     db.init_db()
     db.save_prime_parts(prime_parts)
+    best_hours = db.get_best_market_hours()
+
+    print("\n--------- Best Market Hours ---------")
+    if not best_hours:
+        print("No price snapshots available for the last 30 days.")
+        print("Run collector.py first, then try main.py again.")
+    else:
+        for hour in best_hours[:5]:
+            print(
+                f"{int(hour['hour_of_day']):02d}:00 "
+                f"- average price: {float(hour['average_price']):.2f} platinum"
+            )
+    print("-------------------------------------\n")
     
     # Loop through the first 20 items in the list
-    print("\n------------------------------------------------------")
+    print("\n-------------------------------------")
     for item in prime_parts[:20]:
         # Safely get the name of the item
         item_name = item.get("i18n", {}).get("en", {}).get("name", "Unknown Item")
         print(f"- {item_name}")
-    print("------------------------------------------------------\n")
+    print("-------------------------------------\n")
 
     # Prompt the user to input a prime part name
     user_input = input("\nEnter the prime part: ").strip()
