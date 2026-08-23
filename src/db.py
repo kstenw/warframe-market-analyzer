@@ -12,7 +12,19 @@ engine = create_engine(DATABASE_URL)
 
 
 def init_db() -> None:
-    """Create the PostgreSQL tables if they do not already exist."""
+    """Create the SQL tables if they do not already exist.
+        prime_parts: Stores information about prime parts
+            - slug: Unique identifier for the item (Primary key)
+            - name: Name of the item
+            - ducats: Ducat value of the item (Default 0)
+            - fetched_at: Timestamp of when the item was last fetched 
+
+        price_snapshots: Stores price snapshots for prime parts
+            - id: Unique identifier for the snapshot
+            - slug: Foreign key referencing the prime_parts table
+            - average_price: Average price of the item at the time of the snapshot
+            - fetched_at: Timestamp of when the snapshot was taken
+    """
     with engine.begin() as connection:
         connection.execute(text("""
             CREATE TABLE IF NOT EXISTS prime_parts (
@@ -26,20 +38,17 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS price_snapshots (
                 id BIGSERIAL PRIMARY KEY,
                 slug TEXT NOT NULL REFERENCES prime_parts(slug),
-                    average_price NUMERIC(10, 2),
+                average_price NUMERIC(10, 2),
                 fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
 
-        connection.execute(text("""
-            ALTER TABLE price_snapshots
-            ADD COLUMN IF NOT EXISTS average_price NUMERIC(10, 2)
-        """))
-
 
 def save_prime_parts(prime_parts: Iterable[dict]) -> None:
-    """Insert or update prime-part information."""
+    """Insert or update prime part information."""
     rows = []
+
+    # Loop through the list of prime parts and prepare the data for insertion
     for item in prime_parts:
         slug = item.get("slug")
         if not slug:
@@ -51,6 +60,7 @@ def save_prime_parts(prime_parts: Iterable[dict]) -> None:
     if not rows:
         return
 
+    # Use a single transaction to insert or update all prime parts
     with engine.begin() as connection:
         connection.execute(text("""
             INSERT INTO prime_parts (slug, name, ducats)
@@ -63,7 +73,7 @@ def save_prime_parts(prime_parts: Iterable[dict]) -> None:
 
 
 def search_prime_parts(item: str):
-    """Return prime parts whose name contain item."""
+    """Return prime parts whose name is item."""
     with engine.connect() as connection:
         result = connection.execute(text("""
             SELECT name, slug, ducats, fetched_at
@@ -104,23 +114,7 @@ def delete_old_snapshots(days: int = 90) -> None:
         """), {"days": days})
 
 
-def get_lowest_prices():
-    """Return the lowest recorded three-order average for each prime part."""
-    with engine.connect() as connection:
-        result = connection.execute(text("""
-            SELECT
-                prime_parts.name,
-                prime_parts.slug,
-                MIN(price_snapshots.average_price) AS average_price
-            FROM price_snapshots
-            JOIN prime_parts ON prime_parts.slug = price_snapshots.slug
-            WHERE price_snapshots.average_price IS NOT NULL
-            GROUP BY prime_parts.name, prime_parts.slug
-            ORDER BY average_price ASC
-        """))
-        return result.mappings().all()
-
-
+# Potential use to track how many of each ducat price there is
 def get_ducat_stats():
     """Return summary statistics for stored ducat values."""
     with engine.connect() as connection:

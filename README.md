@@ -60,3 +60,8 @@ Stores one current record for each item: `slug`, `name`, `ducats`, and `fetched_
 Stores historical observations: `id`, `slug`, `lowest_price`, and `fetched_at`.
 
 Snapshots older than 90 days are deleted after each completed collection cycle. The `prime_parts` metadata is kept.
+
+## Next Steps (Roadmap)
+1. Scanning items from inventory screenshot and outputting prices
+2. Creating a website
+3. Deploy

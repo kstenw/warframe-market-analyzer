@@ -22,6 +22,7 @@ def collect_prices():
 
     print(f"Collecting prices for {len(prime_parts)} items...")
 
+    # Loop through each prime part and fetch its average price
     for number, item in enumerate(prime_parts, start=1):
         slug = item.get("slug")
         name = item.get("i18n", {}).get("en", {}).get("name", "Unknown Item")
@@ -32,9 +33,11 @@ def collect_prices():
         average_price = wfm_api.get_average_price_top_4(slug)
         db.save_price_snapshot(slug, average_price)
 
+        # Print the progress to the console
         print(f"{number}/{len(prime_parts)}: {name} = {average_price} platinum")
         time.sleep(REQUEST_DELAY)
 
+    # Delete old snapshots after 90 days to keep the database size manageable
     db.delete_old_snapshots(SNAPSHOT_RETENTION_DAYS)
     print("Price collection complete.")
 

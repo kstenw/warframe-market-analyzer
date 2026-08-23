@@ -19,23 +19,28 @@ def run_duckums():
         item_name = item.get("i18n", {}).get("en", {}).get("name", "Unknown Item")
         print(f"- {item_name}")
     print("------------------------------------------------------\n")
-    
+
+    # Prompt the user to input a prime part name
     user_input = input("\nEnter the prime part: ").strip()
 
+    # Search for the item in the list of prime parts
     found_item = None
     for item in prime_parts:
         if item.get("i18n", {}).get("en", {}).get("name", "").lower() == user_input.lower():
             found_item = item
             break
-    
+
+    # If the item is not found, inform the user and exit
     if not found_item:
         print(f"Item '{user_input}' not found among prime parts.")
         return
-    
+
+    # If the item is found, fetch its slug and ducat value
     item_slug = found_item.get("slug")
     ducat_value = found_item.get("ducats", 0)
     average_price = wfm_api.get_price(item_slug)
 
+    # Display the results to the user
     print("\n--- Duckums Result ---")
     print(f"Item: {user_input}")
     print(f"Ducat Value: {ducat_value}")

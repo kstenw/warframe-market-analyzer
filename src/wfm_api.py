@@ -15,11 +15,13 @@ def get_prime_parts_list():
     endpoint = f"{API_BASE_URL}/items"
 
     try:
+        # Make a GET request to the API endpoint
         response = requests.get(endpoint, headers=HEADERS, timeout=15)
         response.raise_for_status()
         json_response = response.json()
         full_items_list = json_response.get('data', [])
 
+        # Filter the list to include only prime parts
         prime_parts = []
         for item in full_items_list:
             item_name = item.get('i18n', {}).get('en', {}).get('name', '')
@@ -49,6 +51,7 @@ def get_average_price_top_4(slug: str):
         response = requests.get(endpoint, headers=HEADERS, timeout=10)
         response.raise_for_status()
 
+        # Extract the relevant data from the JSON response
         json_response = response.json()
         sell_orders = json_response.get('data', {}).get('sell', [])
         ingame_orders = [
@@ -56,6 +59,7 @@ def get_average_price_top_4(slug: str):
             if order.get('user', {}).get('status') == 'ingame'
         ]
 
+        # Sort the prices of the in-game orders and calculate the average of the four cheapest
         prices = sorted(
             order['platinum']
             for order in ingame_orders
