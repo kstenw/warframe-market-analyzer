@@ -1,5 +1,13 @@
-import requests
+from __future__ import annotations
+
+import asyncio
 import json
+from typing import TYPE_CHECKING
+
+import requests
+
+if TYPE_CHECKING:
+    import aiohttp
 
 API_BASE_URL = "https://api.warframe.market/v2"
 
@@ -7,7 +15,8 @@ API_BASE_URL = "https://api.warframe.market/v2"
 HEADERS = {
     "accept": "application/json",
     "Platform": "pc",
-    "Language": "en"
+    "Language": "en",
+    "User-Agent": "python-requests/2.32.0"
 }
 
 def get_prime_parts_list():
@@ -76,6 +85,42 @@ def get_average_price_top_4(slug: str):
         return None
 
     except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None
+
+
+async def get_average_price_top_4_async(
+    session: aiohttp.ClientSession, slug: str
+):
+    """Asynchronously return the average price of the four cheapest orders."""
+    import aiohttp
+
+    endpoint = f"{API_BASE_URL}/orders/item/{slug}/top"
+
+    try:
+        async with session.get(endpoint, headers=HEADERS) as response:
+            response.raise_for_status()
+            # The API may return JSON with a non-JSON content type.
+            json_response = json.loads(await response.text())
+
+        sell_orders = json_response.get("data", {}).get("sell", [])
+        ingame_orders = [
+            order for order in sell_orders
+            if order.get("user", {}).get("status") == "ingame"
+        ]
+        prices = sorted(
+            order["platinum"]
+            for order in ingame_orders
+            if "platinum" in order
+        )
+
+        if not prices:
+            return None
+
+        cheapest_four = prices[:4]
+        return round(sum(cheapest_four) / len(cheapest_four), 2)
+
+    except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError,
+            KeyError, TypeError, ValueError):
         return None
 
 def get_price(slug: str):

@@ -15,6 +15,7 @@ Warframe Market Analyzer fetches Prime part data and market prices from the Warf
 
 - Python 3.10 or newer
 - PostgreSQL
+- `aiohttp` (`pip install aiohttp`)
 
 The application creates the `prime_parts` and `price_snapshots` tables automatically when it starts.
 
@@ -38,6 +39,9 @@ cd src
 python collector.py
 ```
 
+The collector fetches prices asynchronously while spacing request starts by
+`0.4` seconds to remain below the API rate limit while improving request retrieval speed.
+
 The collector fetches Prime parts, requests each item’s lowest in-game platinum price, saves each result in `price_snapshots`, and repeats every 30 minutes. It waits `0.4` seconds between requests, targeting 2.5 requests per second and staying below a 3-request-per-second limit.
 
 Keep the collector process running on an always-on computer or server. Stop it with `Ctrl+C`.
@@ -46,7 +50,7 @@ To run one collection cycle without repeating:
 
 ```powershell
 cd src
-python -c "import collector; collector.collect_prices()"
+python -c "import asyncio, collector; asyncio.run(collector.collect_prices())"
 ```
 
 ## Database Tables

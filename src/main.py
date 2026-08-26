@@ -52,12 +52,14 @@ def run_duckums():
     item_slug = found_item.get("slug")
     ducat_value = found_item.get("ducats", 0)
     average_price = wfm_api.get_price(item_slug)
+    ducats_to_plats_ratio = ducat_value / average_price if average_price else 0
 
     # Display the results to the user
     print("\n--- Duckums Result ---")
     print(f"Item: {user_input}")
     print(f"Ducat Value: {ducat_value}")
     print(f"Average Market Price: {average_price}")
+    print(f"Ducats to Platinum Ratio: {ducats_to_plats_ratio:.2f}")
     print("----------------------\n")
 
 if __name__ == "__main__":

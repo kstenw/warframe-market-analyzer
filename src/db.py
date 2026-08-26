@@ -38,9 +38,39 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS price_snapshots (
                 id BIGSERIAL PRIMARY KEY,
                 slug TEXT NOT NULL REFERENCES prime_parts(slug),
-                average_price NUMERIC(10, 2),
+                average_price NUMERIC(10, 2) NOT NULL,
                 fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        """))
+        connection.execute(text("""
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM pg_attribute
+                    WHERE attrelid = 'price_snapshots'::regclass
+                      AND attname = 'average_price'
+                      AND NOT attnotnull
+                ) THEN
+                    DELETE FROM price_snapshots
+                    WHERE average_price IS NULL;
+
+                    ALTER TABLE price_snapshots
+                    ALTER COLUMN average_price SET NOT NULL;
+                END IF;
+            END $$;
+        """))
+        connection.execute(text("""
+            CREATE TABLE IF NOT EXISTS collection_stats (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                attempted_entries BIGINT NOT NULL DEFAULT 0,
+                denied_entries BIGINT NOT NULL DEFAULT 0
+            )
+        """))
+        connection.execute(text("""
+            INSERT INTO collection_stats (id)
+            VALUES (1)
+            ON CONFLICT (id) DO NOTHING
         """))
 
 
@@ -96,13 +126,45 @@ def get_top_ducat_parts(limit: int = 10):
         return result.mappings().all()
 
 
-def save_price_snapshot(slug: str, average_price) -> None:
+def save_price_snapshot(slug: str, average_price) -> bool:
     """Save one average-of-three-cheapest-price observation for an item."""
+    if average_price is None:
+        return False
+
     with engine.begin() as connection:
         connection.execute(text("""
             INSERT INTO price_snapshots (slug, average_price)
             VALUES (:slug, :average_price)
         """), {"slug": slug, "average_price": average_price})
+    return True
+
+
+def record_collection_attempt(denied: bool) -> None:
+    """Add one price lookup to the cumulative collection statistics."""
+    with engine.begin() as connection:
+        connection.execute(text("""
+            UPDATE collection_stats
+            SET attempted_entries = attempted_entries + 1,
+                denied_entries = denied_entries + :denied
+            WHERE id = 1
+        """), {"denied": int(denied)})
+
+
+def get_collection_stats():
+    """Return cumulative attempted, denied, and denial-rate statistics."""
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT
+                attempted_entries,
+                denied_entries,
+                CASE
+                    WHEN attempted_entries = 0 THEN 0
+                    ELSE denied_entries * 100.0 / attempted_entries
+                END AS denial_rate
+            FROM collection_stats
+            WHERE id = 1
+        """))
+        return result.mappings().one()
 
 
 def delete_old_snapshots(days: int = 90) -> None:
