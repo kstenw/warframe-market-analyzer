@@ -5,6 +5,7 @@ import json
 from typing import TYPE_CHECKING
 
 import requests
+import pandas as pd
 
 if TYPE_CHECKING:
     import aiohttp
@@ -63,23 +64,7 @@ def get_average_price_top_4(slug: str):
         # Extract the relevant data from the JSON response
         json_response = response.json()
         sell_orders = json_response.get('data', {}).get('sell', [])
-        ingame_orders = [
-            order for order in sell_orders
-            if order.get('user', {}).get('status') == 'ingame'
-        ]
-
-        # Sort the prices of the in-game orders and calculate the average of the four cheapest
-        prices = sorted(
-            order['platinum']
-            for order in ingame_orders
-            if 'platinum' in order
-        )
-
-        if not prices:
-            return None
-
-        cheapest_four = prices[:4]
-        return round(sum(cheapest_four) / len(cheapest_four), 2)
+        return calculate_clean_average(sell_orders)
 
     except requests.exceptions.RequestException:
         return None
@@ -103,25 +88,49 @@ async def get_average_price_top_4_async(
             json_response = json.loads(await response.text())
 
         sell_orders = json_response.get("data", {}).get("sell", [])
-        ingame_orders = [
-            order for order in sell_orders
-            if order.get("user", {}).get("status") == "ingame"
-        ]
-        prices = sorted(
-            order["platinum"]
-            for order in ingame_orders
-            if "platinum" in order
-        )
-
-        if not prices:
-            return None
-
-        cheapest_four = prices[:4]
-        return round(sum(cheapest_four) / len(cheapest_four), 2)
+        return calculate_clean_average(sell_orders)
 
     except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError,
             KeyError, TypeError, ValueError):
         return None
+
+
+def calculate_clean_average(sell_orders):
+    """Average up to four cheapest valid prices after removing IQR outliers."""
+    prices = pd.DataFrame([
+        {
+            "price": order.get("platinum"),
+            "status": order.get("user", {}).get("status"),
+        }
+        for order in sell_orders
+    ])
+
+    if prices.empty:
+        return None
+
+    prices["price"] = pd.to_numeric(prices["price"], errors="coerce")
+    prices = prices[
+        (prices["status"] == "ingame")
+        & prices["price"].notna()
+        & (prices["price"] > 0)
+    ]
+
+    if prices.empty:
+        return None
+
+    first_quartile = prices["price"].quantile(0.25)
+    third_quartile = prices["price"].quantile(0.75)
+    interquartile_range = third_quartile - first_quartile
+    lower_bound = first_quartile - 1.5 * interquartile_range
+    upper_bound = third_quartile + 1.5 * interquartile_range
+    clean_prices = prices[
+        prices["price"].between(lower_bound, upper_bound)
+    ]["price"]
+
+    if clean_prices.empty:
+        return None
+
+    return round(clean_prices.nsmallest(4).mean(), 2)
 
 def get_price(slug: str):
     """Return the average platinum price of the four cheapest in-game orders."""
