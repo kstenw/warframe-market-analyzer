@@ -3,14 +3,19 @@ import db
 
 def run_duckums():
     # Fetch the list of prime parts from the API
+    print("Fetching Prime parts from Warframe Market...", flush=True)
     prime_parts = wfm_api.get_prime_parts_list()
     if prime_parts is None:
         print("Could not fetch prime parts list from the API")
         return
+    print(f"Fetched {len(prime_parts)} Prime parts.", flush=True)
 
     # Initialize the database and save the prime parts
+    print("Connecting to the database and initializing tables...", flush=True)
     db.init_db()
+    print("Saving Prime parts...", flush=True)
     db.save_prime_parts(prime_parts)
+    print("Calculating best market hours...", flush=True)
     best_hours = db.get_best_market_hours()
 
     print("\n--------- Best Market Hours ---------")
@@ -51,6 +56,7 @@ def run_duckums():
     # If the item is found, fetch its slug and ducat value
     item_slug = found_item.get("slug")
     ducat_value = found_item.get("ducats", 0)
+    print("Fetching the current market price...", flush=True)
     average_price = wfm_api.get_price(item_slug)
     ducats_to_plats_ratio = ducat_value / average_price if average_price else 0
 

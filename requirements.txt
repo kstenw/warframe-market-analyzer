@@ -1,0 +1,6 @@
+aiohttp
+pandas
+psycopg[binary]
+python-dotenv
+requests
+SQLAlchemy

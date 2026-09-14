@@ -57,6 +57,7 @@ cd src
 python -c "import asyncio, collector; asyncio.run(collector.collect_prices())"
 ```
 
+
 ## Database Tables
 
 ### `prime_parts`
