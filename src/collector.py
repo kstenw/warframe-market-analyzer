@@ -31,10 +31,10 @@ async def collect_prices():
         async def fetch_item(number, item):
             # Space request starts to stay below the API rate limit.
             await asyncio.sleep((number - 1) * REQUEST_DELAY)
-            price = await wfm_api.get_average_price_top_4_async(
+            lowest_price, average_price = await wfm_api.get_price_metrics_async(
                 session, item["slug"]
             )
-            return number, item, price
+            return number, item, lowest_price, average_price
 
         tasks = [
             asyncio.create_task(fetch_item(number, item))
@@ -44,8 +44,10 @@ async def collect_prices():
         denied = 0
 
         for completed in asyncio.as_completed(tasks):
-            number, item, average_price = await completed
-            saved = db.save_price_snapshot(item["slug"], average_price)
+            number, item, lowest_price, average_price = await completed
+            saved = db.save_price_snapshot(
+                item["slug"], lowest_price, average_price
+            )
             if not saved:
                 denied += 1
             db.record_collection_attempt(not saved)

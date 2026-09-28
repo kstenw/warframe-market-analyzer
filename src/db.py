@@ -22,6 +22,7 @@ def init_db() -> None:
         price_snapshots: Stores price snapshots for prime parts
             - id: Unique identifier for the snapshot
             - slug: Foreign key referencing the prime_parts table
+            - lowest_price: Lowest price of the item at the time of the snapshot
             - average_price: Average price of the item at the time of the snapshot
             - fetched_at: Timestamp of when the snapshot was taken
     """
@@ -38,9 +39,14 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS price_snapshots (
                 id BIGSERIAL PRIMARY KEY,
                 slug TEXT NOT NULL REFERENCES prime_parts(slug),
+                lowest_price NUMERIC(10, 2),
                 average_price NUMERIC(10, 2) NOT NULL,
                 fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        """))
+        connection.execute(text("""
+            ALTER TABLE price_snapshots
+            ADD COLUMN IF NOT EXISTS lowest_price NUMERIC(10, 2)
         """))
         connection.execute(text("""
             DO $$
@@ -114,6 +120,91 @@ def search_prime_parts(item: str):
         return result.mappings().all()
 
 
+def get_prime_parts(search: str = "", sort: str = "name", order: str = "asc",
+                    limit: int = 50, offset: int = 0):
+    """Return prime parts with their latest stored price snapshot."""
+    sort_columns = {
+        "name": "prime_parts.name",
+        "ducats": "prime_parts.ducats",
+        "price": "latest_prices.average_price",
+        "updated": "latest_prices.fetched_at",
+    }
+    sort_column = sort_columns.get(sort, sort_columns["name"])
+    sort_order = "DESC" if order.lower() == "desc" else "ASC"
+
+    with engine.connect() as connection:
+        result = connection.execute(text(f"""
+            SELECT
+                prime_parts.name,
+                prime_parts.slug,
+                prime_parts.ducats,
+                latest_prices.lowest_price,
+                latest_prices.average_price,
+                latest_prices.fetched_at
+            FROM prime_parts
+            LEFT JOIN LATERAL (
+                SELECT lowest_price, average_price, fetched_at
+                FROM price_snapshots
+                WHERE price_snapshots.slug = prime_parts.slug
+                ORDER BY fetched_at DESC
+                LIMIT 1
+            ) AS latest_prices ON TRUE
+            WHERE prime_parts.name ILIKE :pattern
+            ORDER BY {sort_column} {sort_order} NULLS LAST, prime_parts.name ASC
+            LIMIT :limit OFFSET :offset
+        """), {
+            "pattern": f"%{search}%",
+            "limit": limit,
+            "offset": offset,
+        })
+        return result.mappings().all()
+
+
+def count_prime_parts(search: str = "") -> int:
+    """Return the number of prime parts matching a search string."""
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT COUNT(*)
+            FROM prime_parts
+            WHERE name ILIKE :pattern
+        """), {"pattern": f"%{search}%"})
+        return result.scalar_one()
+
+
+def get_prime_part(slug: str):
+    """Return one prime part with its latest stored price snapshot."""
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT
+                prime_parts.name,
+                prime_parts.slug,
+                prime_parts.ducats,
+                latest_prices.lowest_price,
+                latest_prices.average_price,
+                latest_prices.fetched_at
+            FROM prime_parts
+            LEFT JOIN LATERAL (
+                SELECT lowest_price, average_price, fetched_at
+                FROM price_snapshots
+                WHERE price_snapshots.slug = prime_parts.slug
+                ORDER BY fetched_at DESC
+                LIMIT 1
+            ) AS latest_prices ON TRUE
+            WHERE prime_parts.slug = :slug
+        """), {"slug": slug})
+        return result.mappings().one_or_none()
+
+
+def get_latest_price_timestamp():
+    """Return the timestamp of the newest stored price snapshot."""
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT MAX(fetched_at)
+            FROM price_snapshots
+        """))
+        return result.scalar_one_or_none()
+
+
 def get_top_ducat_parts(limit: int = 10):
     """Return the prime parts with the highest ducat values."""
     with engine.connect() as connection:
@@ -126,16 +217,20 @@ def get_top_ducat_parts(limit: int = 10):
         return result.mappings().all()
 
 
-def save_price_snapshot(slug: str, average_price) -> bool:
-    """Save one average-of-three-cheapest-price observation for an item."""
+def save_price_snapshot(slug: str, lowest_price, average_price) -> bool:
+    """Save one lowest-price and average-price observation for an item."""
     if average_price is None:
         return False
 
     with engine.begin() as connection:
         connection.execute(text("""
-            INSERT INTO price_snapshots (slug, average_price)
-            VALUES (:slug, :average_price)
-        """), {"slug": slug, "average_price": average_price})
+            INSERT INTO price_snapshots (slug, lowest_price, average_price)
+            VALUES (:slug, :lowest_price, :average_price)
+        """), {
+            "slug": slug,
+            "lowest_price": lowest_price,
+            "average_price": average_price,
+        })
     return True
 
 

@@ -97,6 +97,12 @@ async def get_average_price_top_4_async(
 
 def calculate_clean_average(sell_orders):
     """Average up to four cheapest valid prices after removing IQR outliers."""
+    metrics = calculate_price_metrics(sell_orders)
+    return metrics[1] if metrics else None
+
+
+def calculate_price_metrics(sell_orders):
+    """Return the lowest and average prices from valid in-game orders."""
     prices = pd.DataFrame([
         {
             "price": order.get("platinum"),
@@ -130,7 +136,31 @@ def calculate_clean_average(sell_orders):
     if clean_prices.empty:
         return None
 
-    return round(clean_prices.nsmallest(4).mean(), 2)
+    cheapest_prices = clean_prices.nsmallest(4)
+    return (
+        round(float(cheapest_prices.min()), 2),
+        round(float(cheapest_prices.mean()), 2),
+    )
+
+
+async def get_price_metrics_async(session: aiohttp.ClientSession, slug: str):
+    """Asynchronously return lowest and average prices for an item."""
+    import aiohttp
+
+    endpoint = f"{API_BASE_URL}/orders/item/{slug}/top"
+
+    try:
+        async with session.get(endpoint, headers=HEADERS) as response:
+            response.raise_for_status()
+            json_response = json.loads(await response.text())
+
+        sell_orders = json_response.get("data", {}).get("sell", [])
+        metrics = calculate_price_metrics(sell_orders)
+        return metrics if metrics else (None, None)
+
+    except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError,
+            KeyError, TypeError, ValueError):
+        return None, None
 
 def get_price(slug: str):
     """Return the average platinum price of the four cheapest in-game orders."""

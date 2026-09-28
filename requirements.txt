@@ -1,6 +1,8 @@
 aiohttp
+fastapi
 pandas
 psycopg[binary]
 python-dotenv
 requests
 SQLAlchemy
+uvicorn[standard]
