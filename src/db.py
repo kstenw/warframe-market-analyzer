@@ -25,6 +25,10 @@ def init_db() -> None:
             - lowest_price: Lowest price of the item at the time of the snapshot
             - average_price: Average price of the item at the time of the snapshot
             - fetched_at: Timestamp of when the snapshot was taken
+        collection_stats: Stores cumulative statistics about price collection attempts
+            - id: Unique identifier for the stats (Primary key, always 1)
+            - attempted_entries: Number of entries that were attempted to be collected
+            - denied_entries: Number of entries that were denied
     """
     with engine.begin() as connection:
         connection.execute(text("""
