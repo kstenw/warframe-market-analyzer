@@ -11,7 +11,6 @@
   --border: #38505a;
   --danger: #e88978;
   --shadow: 0 18px 50px rgb(0 0 0 / 25%);
-  --radius: 12px;
   --page-width: 1120px;
 }
 
@@ -116,25 +115,28 @@ main > div {
   gap: 12px;
   align-items: center;
   padding: 16px;
-  border-radius: var(--radius);
+  border-radius: 0;
 }
 
 .page-header {
   margin-bottom: 22px;
   padding: 26px 24px;
-  border-radius: var(--radius);
+  border-radius: 0;
 }
 
 .page-analytics .page-header,
 .page-about .page-header {
+  display: block;
   padding: 0;
   background: transparent;
   border: 0;
   box-shadow: none;
+  text-align: center;
 }
 
 .page-analytics .page-header h1 {
   font-size: clamp(1.8rem, 4vw, 3.4rem);
+  margin-bottom: 10px;
 }
 
 .page-about > .about-layout {
@@ -181,8 +183,8 @@ main > .results-panel {
   overflow-x: auto;
   padding: 20px;
   background: var(--panel-bg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  border: 0;
+  box-shadow: none;
 }
 
 .results-table {
@@ -244,7 +246,7 @@ main > .results-panel {
 }
 
 .chart-card {
-  border-radius: var(--radius);
+  border-radius: 0;
   padding: 18px;
 }
 
@@ -277,7 +279,7 @@ main > .results-panel {
   align-items: center;
   justify-content: center;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: 0;
   background: rgba(231, 184, 92, 0.12);
   color: var(--accent-strong);
   font-size: 0.85rem;
@@ -321,7 +323,7 @@ main > .results-panel {
 .legend-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: 0;
   background: var(--accent);
   display: inline-block;
 }
@@ -388,7 +390,7 @@ main > .results-panel {
   height: 32px;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: 0;
   font-size: 0.7rem;
   font-weight: 700;
   margin-right: 10px;
@@ -448,7 +450,7 @@ select,
 button {
   min-height: 44px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   font: inherit;
 }
 
@@ -492,7 +494,7 @@ button:not(.nav-button):hover {
 main > p {
   margin: 16px 0 0;
   padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: 0;
   color: var(--text-muted);
 }
 
