@@ -193,6 +193,11 @@ main > .results-panel {
   text-align: left;
 }
 
+.results-table th:not(:first-child),
+.results-table td:not(:first-child) {
+  text-align: center;
+}
+
 .results-table th, .results-table td {
   padding: 16px 18px;
   border-bottom: 1px solid var(--border);
@@ -491,6 +496,11 @@ button:not(.nav-button):hover {
   transform: translateY(-1px);
 }
 
+.sort-order-button {
+  width: 140px;
+  flex: 0 0 140px;
+}
+
 main > p {
   margin: 16px 0 0;
   padding: 14px 16px;
@@ -531,5 +541,9 @@ main > p[role='alert'] {
   select,
   button {
     width: 100%;
+  }
+
+  .sort-order-button {
+    flex-basis: auto;
   }
 }

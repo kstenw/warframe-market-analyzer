@@ -19,6 +19,7 @@ export function DashboardControls({search, setSearch, sort, setSort, order, setO
             {/* Button for toggling the order of sorting (asc/desc) */}
 			<button
 				type="button"
+				className="sort-order-button"
 				onClick={() => setOrder(order === 'asc' ? 'desc' : 'asc')}
 			>
 				{order === 'asc' ? 'Ascending' : 'Descending'}

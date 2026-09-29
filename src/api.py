@@ -1,8 +1,6 @@
 from datetime import datetime
-
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-
 from . import db
 
 
