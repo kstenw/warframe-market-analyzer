@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
+// Fetch wrapper that handles timeouts and errors
 async function request(path) {
 	const controller = new AbortController()
 	const timeoutId = setTimeout(() => controller.abort(), 8000)
@@ -62,6 +63,24 @@ export function fetchItemHistory(slug, days = 30) {
 	return request(
 		`/api/items/${encodeURIComponent(slug)}/history?${params.toString()}`,
 	)
+}
+
+export function fetchAnalyticsBestBuys(days = 30, limit = 7) {
+	const params = new URLSearchParams({
+		days: String(days),
+		limit: String(limit),
+	})
+
+	return request(`/api/analytics/best-buys?${params.toString()}`)
+}
+
+export function fetchMarketHours(days = 30, minItems = 10) {
+	const params = new URLSearchParams({
+		days: String(days),
+		min_items: String(minItems),
+	})
+
+	return request(`/api/analytics/market-hours?${params.toString()}`)
 }
 
 export function fetchApiStatus() {

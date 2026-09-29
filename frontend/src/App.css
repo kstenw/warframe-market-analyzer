@@ -15,6 +15,80 @@
   --page-width: 1120px;
 }
 
+body {
+  font-size: 18px;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--page-bg);
+  color: var(--text-main);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button, input, select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.navbar {
+  display: flex;
+  width: min(calc(100% - 40px), var(--page-width));
+  min-height: 72px;
+  margin: 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-brand, .nav-button {
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.navbar-brand {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.navbar nav {
+  display: flex;
+  gap: 12px;
+}
+
+.nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1rem;
+  transition: color 160ms ease;
+  cursor: pointer;
+}
+
+.nav-button:hover, .nav-button:focus-visible, .nav-button.active {
+  color: var(--accent-strong);
+  transform: none;
+}
+
 main {
   width: min(calc(100% - 40px), var(--page-width));
   margin: 0 auto;
@@ -22,7 +96,7 @@ main {
 }
 
 h1 {
-  margin: 0 0 28px;
+  margin: 0 0 12px;
   color: var(--text-main);
   font-size: clamp(2.2rem, 6vw, 4.8rem);
   font-weight: 700;
@@ -30,21 +104,9 @@ h1 {
   line-height: 0.95;
 }
 
-main::before {
-  content: 'WARFRAME MARKET ANALYZER';
-  display: block;
-  margin-bottom: 14px;
-  color: var(--accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-}
-
-main > div,
-main > p,
-main > ul {
+main > div, main > p, .page-header, .chart-card {
   background: var(--panel-bg);
-  border: 1px solid var(--border);
+  border: 0;
   box-shadow: var(--shadow);
 }
 
@@ -55,6 +117,330 @@ main > div {
   align-items: center;
   padding: 16px;
   border-radius: var(--radius);
+}
+
+.page-header {
+  margin-bottom: 22px;
+  padding: 26px 24px;
+  border-radius: var(--radius);
+}
+
+.page-analytics .page-header,
+.page-about .page-header {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.page-analytics .page-header h1 {
+  font-size: clamp(1.8rem, 4vw, 3.4rem);
+}
+
+.page-about > .about-layout {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.page-about {
+  text-align: center;
+}
+
+.page-about .about-layout {
+  margin: 0 auto;
+}
+
+.page-about .about-section ul {
+  width: fit-content;
+  margin: 0 auto;
+  padding-left: 1.25rem;
+  text-align: left;
+  list-style-position: outside;
+}
+
+.page-about .page-header h1,
+main > h1 {
+  font-size: clamp(1.8rem, 4vw, 3.4rem);
+}
+
+.page-header h1,
+main > h1 {
+  text-align: center;
+}
+
+main > h1 {
+  margin-bottom: 32px;
+}
+
+main > .results-panel {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  padding: 20px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.results-table th, .results-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.results-table th {
+  color: var(--accent-strong);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.results-table td {
+  color: var(--text-muted);
+}
+
+.results-table td:first-child {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.results-table .sell-ducats {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.results-table .sell-plat {
+  color: #8bd49c;
+  font-weight: 700;
+}
+
+.results-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.chart-card {
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.chart-header-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.chart-header-row > div {
+  width: 100%;
+  text-align: left;
+}
+
+.chart-header-row h2 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.3rem;
+}
+
+.chart-header-row .chart-insight {
+  margin: 6px 0 0;
+  text-align: left;
+}
+
+.chart-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(231, 184, 92, 0.12);
+  color: var(--accent-strong);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.market-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 10px;
+  flex: 1;
+}
+
+.grid-line {
+  stroke: rgba(170, 184, 188, 0.18);
+  stroke-width: 1;
+}
+
+.chart-label {
+  fill: var(--text-muted);
+  font-size: 14px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 0;
+  margin: 18px 0 0;
+  list-style: none;
+  color: var(--text-muted);
+}
+
+.chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+
+.analytics-grid {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.chart-insight {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.y-axis-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 6px 0 18px;
+}
+
+.y-axis-labels.numeric {
+  min-width: 38px;
+  text-align: right;
+}
+
+.chart-with-axis {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.best-items-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.best-items-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.best-items-list li:last-child {
+  border-bottom: 0;
+}
+
+.best-item-name-block {
+  display: flex;
+  align-items: center;
+}
+
+.best-item-rank {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+.best-item-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.about-layout {
+  max-width: 760px;
+}
+
+.about-section {
+  margin-bottom: 34px;
+}
+
+.about-section:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .best-items-list li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .best-item-meta {
+    justify-content: flex-start;
+  }
+}
+
+.about-section h2,
+.about-section h3 {
+  margin-top: 0;
+  color: var(--text-main);
+}
+
+.about-section p,
+.about-section li {
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.about-section ul {
+  margin: 0;
+  padding-left: 18px;
 }
 
 input,
@@ -98,7 +484,7 @@ button {
   transition: background 160ms ease, transform 160ms ease;
 }
 
-button:hover {
+button:not(.nav-button):hover {
   background: var(--accent-strong);
   transform: translateY(-1px);
 }
@@ -112,28 +498,23 @@ main > p {
 
 main > p[role='alert'] {
   color: var(--danger);
-  border-color: var(--danger);
-}
-
-main > ul {
-  margin: 24px 0 0;
-  padding: 0;
-  list-style: none;
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-main > ul li {
-  padding: 16px 20px;
-  color: var(--text-main);
-  border-bottom: 1px solid var(--border);
-}
-
-main > ul li:last-child {
-  border-bottom: 0;
 }
 
 @media (max-width: 640px) {
+  .navbar {
+    width: min(calc(100% - 24px), var(--page-width));
+    min-height: 64px;
+  }
+
+  .navbar nav {
+    gap: 8px;
+  }
+
+  .nav-button {
+    font-size: 0.9rem;
+    padding: 0 10px;
+  }
+
   main {
     width: min(calc(100% - 24px), var(--page-width));
     padding: 44px 0;
@@ -150,4 +531,3 @@ main > ul li:last-child {
     width: 100%;
   }
 }
-

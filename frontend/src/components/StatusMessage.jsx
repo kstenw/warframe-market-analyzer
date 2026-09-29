@@ -1,6 +1,10 @@
 import { ItemTable } from './ItemTable'
 
-export function StatusMessage({ loading, error, items }) {
+export function StatusMessage({ loading, error, items, hasSearched }) {
+	if (!hasSearched) {
+		return null
+	}
+
 	if (loading) {
 		return <p>Loading market data...</p>
 	}

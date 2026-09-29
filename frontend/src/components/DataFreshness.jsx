@@ -1,7 +1,11 @@
 export function DataFreshness({ lastUpdated }) {
+    if (!lastUpdated) {
+        return null
+    }
+
     return (
         <div>
-            {lastUpdated && <p>Last updated: {lastUpdated}</p>}
+            <p>Last updated: {lastUpdated}</p>
         </div>
     )
 }

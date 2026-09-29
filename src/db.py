@@ -138,7 +138,7 @@ def get_prime_parts(search: str = "", sort: str = "name", order: str = "asc",
                 prime_parts.name,
                 prime_parts.slug,
                 prime_parts.ducats,
-                latest_prices.lowest_price,
+                COALESCE(latest_prices.lowest_price, latest_prices.average_price) AS lowest_price,
                 latest_prices.average_price,
                 latest_prices.fetched_at
             FROM prime_parts
@@ -179,7 +179,7 @@ def get_prime_part(slug: str):
                 prime_parts.name,
                 prime_parts.slug,
                 prime_parts.ducats,
-                latest_prices.lowest_price,
+                COALESCE(latest_prices.lowest_price, latest_prices.average_price) AS lowest_price,
                 latest_prices.average_price,
                 latest_prices.fetched_at
             FROM prime_parts
@@ -313,7 +313,7 @@ def get_best_items_to_buy(days: int = 30, limit: int = 20):
                 prime_parts.slug,
                 prime_parts.ducats,
                 AVG(price_snapshots.average_price) AS average_price,
-                AVG(price_snapshots.average_price) / prime_parts.ducats AS platinum_per_ducat,
+                prime_parts.ducats / NULLIF(AVG(price_snapshots.average_price), 0) AS ducats_per_platinum,
                 COUNT(price_snapshots.id) AS snapshot_count,
                 MAX(price_snapshots.fetched_at) AS last_snapshot
             FROM price_snapshots
@@ -322,7 +322,7 @@ def get_best_items_to_buy(days: int = 30, limit: int = 20):
               AND price_snapshots.average_price IS NOT NULL
               AND prime_parts.ducats > 0
             GROUP BY prime_parts.name, prime_parts.slug, prime_parts.ducats
-            ORDER BY platinum_per_ducat ASC, average_price ASC
+            ORDER BY ducats_per_platinum DESC, average_price ASC
             LIMIT :limit
         """), {"days": days, "limit": limit})
         return result.mappings().all()
